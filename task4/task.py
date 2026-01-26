@@ -57,20 +57,17 @@ def aggregate_membership(activations, rules, control_ling_var, s_values):
         mu_agg = np.maximum(mu_agg, mu_clipped)
     return mu_agg
 
-def defuzzify_mean_of_max(s_values, mu_agg):
+def defuzzify_first_of_max(s_values, mu_agg):
     if len(mu_agg) == 0:
         return 0.0
     max_mu = np.max(mu_agg)
     if max_mu == 0:
         return 0.0
-    indices = np.where(np.isclose(mu_agg, max_mu, atol=1e-6))[0]
-    if len(indices) == 0:
-        return 0.0
-    left_idx = indices[0]
-    right_idx = indices[-1]
-    s_left = s_values[left_idx]
-    s_right = s_values[right_idx]
-    return (s_left + s_right) / 2
+    for i, mu in enumerate(mu_agg):
+        if np.isclose(mu, max_mu, atol=1e-6):
+            return s_values[i]
+    return 0.0
+
 
 def compute_optimal_control(T, temp_ling_var, control_ling_var, rules, steps=1001):
     s_min, s_max = get_output_range(control_ling_var)
@@ -82,7 +79,7 @@ def compute_optimal_control(T, temp_ling_var, control_ling_var, rules, steps=100
 
     mu_agg = aggregate_membership(activations, rules, control_ling_var, s_values)
 
-    s_opt = defuzzify_mean_of_max(s_values, mu_agg)
+    s_opt = defuzzify_first_of_max(s_values, mu_agg)
     
     return s_opt
 
